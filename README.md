@@ -15,12 +15,12 @@ Tailwind CSS v4 introduced `color-mix()` support, but there are two key drawback
 This demo introduces a workaround using a utility function `twMix`, which transforms:
 
 ```ts
-import { twMix } from './src/colorMix.ts'
+import { twMix } from './colorMix.ts'
 html`<div class=${twMix`bg-blue-500/50`}></div>`
 
 // in Web Components(Lit):
 import { create, cssomSheet } from "twind";
-import { createTw } from "./colorMix";
+import { createTw } from "./colorMix.ts";
 
 const sheet = cssomSheet({ target: new CSSStyleSheet() });
 const { tw } = create({ sheet });
