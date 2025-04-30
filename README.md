@@ -18,7 +18,7 @@ This demo introduces a workaround using a utility function `twMix`, which transf
 import { twMix } from './src/colorMix.ts'
 html`<div class=${twMix`bg-blue-500/50`}></div>`
 
-// in shadowDom(Lit):
+// in Web Components(Lit):
 import { create, cssomSheet } from "twind";
 import { createTw } from "./colorMix";
 
