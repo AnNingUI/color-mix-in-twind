@@ -1,0 +1,21 @@
+{
+  "name": "color-mix-in-twind",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "culori": "^4.0.1",
+    "lit": "^3.2.1",
+    "twind": "^0.16.19"
+  },
+  "devDependencies": {
+    "@types/culori": "^2.1.1",
+    "typescript": "~5.7.2",
+    "vite": "^6.3.1"
+  }
+}
