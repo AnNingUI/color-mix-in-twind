@@ -1,8 +1,8 @@
 /**
- * @author AnNingUI
+ * @author
  */
 
-import { formatRgb, parse } from "culori";
+import { converter, formatRgb, parse } from "culori";
 import { type TW, tw as _tw } from "twind";
 import * as colors from "twind/colors";
 
@@ -21,33 +21,7 @@ const COLOR_REGEX = new RegExp(
 		"$"
 );
 
-const getTw = (__tw?: TW) => __tw || _tw;
-
-const hex2rgba = (hex: string) => {
-	hex = hex.replace(/^#/, "");
-	if (hex.length === 3) {
-		const [r, g, b] = hex.split("").map((c) => parseInt(c + c, 16));
-		return { r, g, b, a: 1 };
-	}
-	if (hex.length === 4) {
-		const [r, g, b, a] = hex.split("").map((c) => parseInt(c + c, 16));
-		return { r, g, b, a: Number((a / 255).toFixed(3)) };
-	}
-	if (hex.length === 6) {
-		const r = parseInt(hex.slice(0, 2), 16);
-		const g = parseInt(hex.slice(2, 4), 16);
-		const b = parseInt(hex.slice(4, 6), 16);
-		return { r, g, b, a: 1 };
-	}
-	if (hex.length === 8) {
-		const r = parseInt(hex.slice(0, 2), 16);
-		const g = parseInt(hex.slice(2, 4), 16);
-		const b = parseInt(hex.slice(4, 6), 16);
-		const a = parseInt(hex.slice(6, 8), 16);
-		return { r, g, b, a: Number((a / 255).toFixed(3)) };
-	}
-	return { r: 0, g: 0, b: 0, a: 1 };
-};
+const rgbaConverter = converter("rgb");
 
 // LRU 缓存实现
 class ColorCache {
@@ -75,34 +49,33 @@ class ColorCache {
 
 const colorCache = new ColorCache(100);
 
-const processToken = (token: string, _tw?: TW): string => {
-	const __tw = getTw(_tw);
+const processToken = (token: string): string => {
 	const match = token.match(COLOR_REGEX);
-	if (!match) return __tw(token);
+	if (!match) return token;
 
 	const [_, variants, prefix, colorNameRaw, __, opacityStr] = match;
 	if (colorNameRaw.startsWith("[") && colorNameRaw.endsWith("]")) {
-		console.log("[JIT] opacityStr", opacityStr);
-		if (!opacityStr) return __tw(token);
+		// console.log("[JIT] opacityStr", opacityStr);
+		if (!opacityStr) return token;
 
 		const rawColor = colorNameRaw.slice(1, -1);
 		const alpha = Number(opacityStr) / 100;
 		const cacheKey = `${rawColor}/${alpha}`;
 
 		const cached = colorCache.get(cacheKey);
-		if (cached) return __tw`${variants}${prefix}-[${cached}]`;
+		if (cached) return `${variants}${prefix}-[${cached}]`;
 
 		const parsed = parse(rawColor);
-		if (!parsed) return __tw(token);
+		if (!parsed) return token;
 
 		parsed.alpha = alpha;
 		const result = formatRgb(parsed).replace(/\s/g, "");
 		colorCache.set(cacheKey, result);
-		return __tw`${variants}${prefix}-[${result}]`;
+		return `${variants}${prefix}-[${result}]`;
 	}
 	const [colorName, _shadeStr] = colorNameRaw.split("-");
 	if (!(colorName in colors)) {
-		return __tw(token);
+		return token;
 	}
 
 	const colorValue = colors[colorName as keyof typeof colors];
@@ -111,34 +84,31 @@ const processToken = (token: string, _tw?: TW): string => {
 	if (_shadeStr) {
 		const shade = parseInt(_shadeStr, 10) as ColorJ;
 		if (typeof colorValue !== "object" || !(shade in colorValue)) {
-			return __tw(token);
+			return token;
 		}
 		colorHex = colorValue[shade];
 	} else {
 		if (typeof colorValue !== "string") {
-			return __tw(token);
+			return token;
 		}
 		colorHex = colorValue;
 	}
 
 	const alpha = opacityStr ? Number(opacityStr) / 100 : 1;
-	const { r, g, b } = hex2rgba(colorHex);
-	const r2 = __tw`${variants}${prefix}-[rgba(${r},${g},${b},${alpha})]`;
-	console.log("r", r2);
-	return __tw`${variants}${prefix}-[rgba(${r},${g},${b},${alpha})]`;
+	// console.log("colorHex", colorHex);
+	const { r, g, b } = rgbaConverter(colorHex)!;
+	return `${variants}${prefix}-[rgba(${r * 255},${g * 255},${
+		b * 255
+	},${alpha})]`;
 };
 
 // 支持模板字符串
 export const createTw = (__tw: TW) => {
-	return (strings: TemplateStringsArray, ...values: any[]) =>
-		__tw(
-			strings
-				.reduce((acc, str, i) => acc + str + (values[i]?.toString() ?? ""), "")
-				.split(/\s+/)
-				.filter(Boolean)
-				.map((t) => processToken(t, __tw))
-				.join(" ")
-		);
+	return (strings: TemplateStringsArray, ...values: any[]) => {
+		const raw = strings.reduce((a, s, i) => a + s + (values[i] ?? ""), "");
+		const out = raw.match(/\S+/g)?.map(processToken).join(" ") ?? "";
+		return __tw(out);
+	};
 };
 
 export const twMix = createTw(_tw);
