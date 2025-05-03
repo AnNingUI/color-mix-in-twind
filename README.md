@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+ > The reason this project was created was that [`twind`](https://www.npmjs.com/package/twind) couldn't use the `color/opacity` modifier, but it was implemented in [`@twind/core`](https://www.npmjs.com/package/@twind/core), so I archived this repository.
+ 
+ ----
 
 # color-mix-in-twind
 
